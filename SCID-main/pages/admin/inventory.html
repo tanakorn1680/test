@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>คลังไอดี — Admin</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+  :root{--navy:#1A6BA0;--gold:#D9A330;--ink:#1A3A52;--green-go:#3F8557;--danger:#E04433;--line:rgba(26,106,160,0.15);}
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  body{font-family:'IBM Plex Sans Thai',sans-serif;background:#81CFF0;color:var(--ink);min-height:100vh;padding:16px 14px 40px;}
+  .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+  .back-link{font-size:13px;font-weight:600;color:var(--navy);text-decoration:none;}
+  .page-title{font-family:'Baloo 2',sans-serif;font-size:18px;font-weight:800;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+  .page-title svg{width:20px;height:20px;flex-shrink:0;}
+  .card{background:#fff;border-radius:13px;padding:16px;box-shadow:0 2px 10px rgba(0,40,80,0.08);margin-bottom:14px;}
+  .card-title{font-size:14px;font-weight:700;margin-bottom:12px;}
+  .summary-list{display:flex;flex-wrap:wrap;gap:8px;}
+  .summary-chip{background:rgba(26,106,160,0.06);border-radius:9px;padding:8px 12px;font-size:12.5px;}
+  .summary-chip .count{font-family:'Baloo 2',sans-serif;font-weight:800;color:var(--navy);font-size:15px;}
+
+  /* ── Form fields ─────────────────────────────────────────── */
+  .field{margin-bottom:12px;}
+  .field label{font-size:12.5px;font-weight:600;display:block;margin-bottom:5px;}
+  .field select,.field input,.field textarea{width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:8px;font-size:13px;font-family:'IBM Plex Sans Thai',sans-serif;background:#fff;outline:none;transition:border-color .15s;}
+  .field select:focus,.field input:focus,.field textarea:focus{border-color:var(--navy);}
+  .field input.mono,.field textarea.mono{font-family:'Space Mono',monospace;}
+  .field textarea{min-height:110px;resize:vertical;line-height:1.6;}
+  .hint{font-size:11.5px;color:rgba(26,58,82,0.5);margin-top:5px;}
+  .submit-btn{width:100%;padding:12px 0;background:var(--navy);color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:700;font-family:'Baloo 2',sans-serif;cursor:pointer;transition:opacity .15s;}
+  .submit-btn:disabled{opacity:0.5;cursor:not-allowed;}
+  .form-alert{padding:9px 11px;border-radius:8px;font-size:12.5px;margin-top:10px;display:none;}
+  .form-alert.show{display:block;}
+  .form-alert.error{background:rgba(224,68,51,0.1);color:var(--danger);}
+  .form-alert.success{background:rgba(63,133,87,0.1);color:var(--green-go);}
+
+  /* ── Section divider inside card ──────────────────────────── */
+  .section-sep{height:1px;background:var(--line);margin:14px 0;}
+  .section-label{font-size:12px;font-weight:700;color:var(--navy);letter-spacing:.4px;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+  .section-label svg{width:13px;height:13px;flex-shrink:0;}
+
+  /* ── Template bar ────────────────────────────────────────── */
+  .tpl-bar{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap;}
+  .tpl-select{flex:1;min-width:0;padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:12.5px;font-family:'IBM Plex Sans Thai',sans-serif;background:#fff;}
+  .tpl-btn{padding:7px 12px;border:none;border-radius:8px;font-size:12px;font-weight:700;font-family:'IBM Plex Sans Thai',sans-serif;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:5px;}
+  .tpl-btn svg{width:12px;height:12px;flex-shrink:0;}
+  .tpl-btn.load{background:rgba(26,106,160,0.08);color:var(--navy);}
+  .tpl-btn.load:hover{background:rgba(26,106,160,0.15);}
+  .tpl-btn.save{background:rgba(63,133,87,0.1);color:var(--green-go);}
+  .tpl-btn.save:hover{background:rgba(63,133,87,0.18);}
+  .tpl-btn.del{background:rgba(224,68,51,0.08);color:var(--danger);}
+  .tpl-btn.del:hover{background:rgba(224,68,51,0.15);}
+  .tpl-btn:disabled{opacity:.4;cursor:not-allowed;}
+  .tpl-name-row{display:flex;gap:8px;margin-bottom:10px;}
+  .tpl-name-input{flex:1;padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:12.5px;font-family:'IBM Plex Sans Thai',sans-serif;}
+  .tpl-name-input:focus{border-color:var(--navy);outline:none;}
+
+  /* ── Filter bar ──────────────────────────────────────────── */
+  .filter-bar{display:flex;gap:8px;margin-bottom:12px;}
+  .filter-bar select{flex:1;padding:9px 12px;border:1.5px solid var(--line);border-radius:8px;font-size:13px;background:#fff;}
+
+  /* ── inventory row ───────────────────────────────────────── */
+  .inv-row{padding:11px 0;border-bottom:1px dotted var(--line);}
+  .inv-row:last-child{border-bottom:none;}
+  .inv-row-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;}
+  .inv-row-meta{min-width:0;flex:1;}
+  .inv-email{font-family:'Space Mono',monospace;font-size:12px;word-break:break-all;}
+  .inv-product{font-size:11.5px;color:rgba(26,58,82,0.5);margin-top:2px;}
+  .inv-sold-at{font-size:11px;color:rgba(26,58,82,0.45);margin-top:2px;}
+  .inv-has-inst{font-size:10.5px;color:var(--navy);margin-top:3px;display:inline-flex;align-items:center;gap:4px;}
+  .inv-has-inst svg{width:10px;height:10px;}
+  .inv-status{font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:11px;white-space:nowrap;flex-shrink:0;}
+  .inv-status.ready{background:rgba(63,133,87,0.12);color:var(--green-go);}
+  .inv-status.sold{background:rgba(26,58,82,0.08);color:rgba(26,58,82,0.6);}
+  .inv-row-actions{display:flex;align-items:center;gap:6px;margin-top:7px;flex-wrap:wrap;}
+
+  /* ── action buttons ──────────────────────────────────────── */
+  .action-btn{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:7px;font-size:11.5px;font-weight:600;font-family:'IBM Plex Sans Thai',sans-serif;cursor:pointer;border:none;line-height:1.3;}
+  .action-btn svg{width:13px;height:13px;flex-shrink:0;}
+  .btn-view{background:rgba(26,106,160,0.08);color:var(--navy);}
+  .btn-view:hover{background:rgba(26,106,160,0.15);}
+  .btn-del{background:rgba(224,68,51,0.08);color:var(--danger);}
+  .btn-del:hover{background:rgba(224,68,51,0.15);}
+  .btn-force{background:rgba(217,163,48,0.1);color:#9a6f10;}
+  .btn-force:hover{background:rgba(217,163,48,0.2);}
+  .action-btn:disabled{opacity:0.45;cursor:not-allowed;}
+  .btn-edit{background:rgba(63,133,87,0.08);color:var(--green-go);}
+  .btn-edit:hover{background:rgba(63,133,87,0.16);}
+
+  /* ── Edit modal specifics ──────────────────────────────── */
+  .edit-form-alert{padding:9px 11px;border-radius:8px;font-size:12.5px;margin-top:12px;display:none;}
+  .edit-form-alert.show{display:block;}
+  .edit-form-alert.error{background:rgba(224,68,51,0.1);color:var(--danger);}
+  .edit-form-alert.success{background:rgba(63,133,87,0.1);color:var(--green-go);}
+  .edit-tpl-bar{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap;}
+  .modal-btn.confirm-edit{background:var(--navy);color:#fff;}
+
+  .empty-state{text-align:center;padding:30px 20px;color:rgba(26,58,82,0.5);font-size:13px;}
+
+  /* ── Modal overlay ───────────────────────────────────────── */
+  .modal-overlay{position:fixed;inset:0;background:rgba(10,25,45,0.55);z-index:900;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .2s;}
+  .modal-overlay.open{opacity:1;pointer-events:all;}
+  .modal-sheet{background:#fff;border-radius:18px;width:100%;max-width:520px;padding:22px 20px 32px;transform:scale(0.94) translateY(12px);transition:transform .22s cubic-bezier(.32,.72,0,1);max-height:88vh;overflow-y:auto;}
+  .modal-overlay.open .modal-sheet{transform:scale(1) translateY(0);}
+  .modal-title{font-family:'Baloo 2',sans-serif;font-size:16px;font-weight:800;margin-bottom:4px;}
+  .modal-sub{font-size:12.5px;color:rgba(26,58,82,0.55);margin-bottom:16px;}
+  .modal-close{float:right;background:none;border:none;font-size:20px;cursor:pointer;color:rgba(26,58,82,0.4);line-height:1;margin-top:-2px;}
+
+  /* credential fields in modal */
+  .cred-field{margin-bottom:12px;}
+  .cred-label{font-size:11.5px;font-weight:600;color:rgba(26,58,82,0.55);margin-bottom:4px;}
+  .cred-value{font-family:'Space Mono',monospace;font-size:13px;background:#F0F4F8;border-radius:8px;padding:9px 12px;word-break:break-all;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+  .cred-text{flex:1;min-width:0;}
+  .copy-btn{background:none;border:none;cursor:pointer;color:var(--navy);padding:2px;flex-shrink:0;}
+  .copy-btn svg{width:15px;height:15px;display:block;}
+  .cred-loading{text-align:center;padding:20px;color:rgba(26,58,82,0.45);font-size:13px;}
+  .cred-err{color:var(--danger);font-size:13px;padding:12px 0;}
+
+  /* instruction block in cred modal */
+  .inst-block{background:rgba(26,106,160,0.05);border:1px solid rgba(26,106,160,0.15);border-radius:10px;padding:12px 14px;margin-top:14px;}
+  .inst-block-title{font-size:12px;font-weight:700;color:var(--navy);margin-bottom:6px;display:flex;align-items:center;gap:5px;}
+  .inst-block-title svg{width:13px;height:13px;}
+  .inst-block-heading{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:6px;}
+  .inst-block-body{font-size:12.5px;color:rgba(26,58,82,0.8);line-height:1.7;white-space:pre-wrap;}
+
+  /* force-delete warning */
+  .warn-box{background:rgba(224,68,51,0.07);border:1px solid rgba(224,68,51,0.2);border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:12.5px;line-height:1.6;}
+  .warn-box strong{color:var(--danger);}
+  .warn-email{font-family:'Space Mono',monospace;font-size:11.5px;background:rgba(224,68,51,0.08);border-radius:6px;padding:3px 8px;display:inline-block;margin-top:4px;word-break:break-all;}
+  .modal-actions{display:flex;gap:8px;margin-top:6px;}
+  .modal-btn{flex:1;padding:12px 0;border:none;border-radius:9px;font-size:13.5px;font-weight:700;font-family:'Baloo 2',sans-serif;cursor:pointer;}
+  .modal-btn.cancel{background:rgba(26,58,82,0.07);color:var(--ink);}
+  .modal-btn.confirm-del{background:var(--danger);color:#fff;}
+  .modal-btn:disabled{opacity:0.5;cursor:not-allowed;}
+  .card{background:rgba(255,255,255,0.92);border:1.5px solid rgba(255,255,255,0.65);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}
+  .submit-btn{transition:opacity .18s,transform .12s cubic-bezier(.32,.72,0,1),box-shadow .18s;box-shadow:0 3px 10px rgba(26,106,160,0.2);}
+  .submit-btn:active{transform:scale(0.97);opacity:0.88;box-shadow:0 1px 4px rgba(26,106,160,0.12);}
+  .submit-btn:disabled{box-shadow:none;}
+  .action-btn{transition:background .15s,transform .12s cubic-bezier(.32,.72,0,1);}
+  .action-btn:active{transform:scale(0.93);}
+  .tpl-btn{transition:background .15s,transform .12s cubic-bezier(.32,.72,0,1);}
+  .tpl-btn:active{transform:scale(0.94);}
+  .modal-btn{transition:opacity .15s,transform .12s cubic-bezier(.32,.72,0,1);}
+  .modal-btn:not(:disabled):active{transform:scale(0.96);opacity:0.88;}
+  .field select:focus,.field input:focus,.field textarea:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 3px rgba(33,150,201,0.15);}
+  .back-link{transition:opacity .15s;}
+  .back-link:active{opacity:0.65;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="/pages/admin/dashboard.html" class="back-link">← Dashboard</a>
+</div>
+<div class="page-title">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/></svg>
+  คลังไอดี
+</div>
+
+<!-- Summary -->
+<div class="card">
+  <div class="card-title">คงเหลือพร้อมขาย</div>
+  <div class="summary-list" id="summaryList">
+    <div class="hint">กำลังโหลด...</div>
+  </div>
+</div>
+
+<!-- Add ID Form -->
+<div class="card">
+  <div class="card-title">เพิ่มไอดีเข้าคลัง</div>
+
+  <!-- Product -->
+  <div class="field">
+    <label>สินค้า</label>
+    <select id="productSelect"><option>กำลังโหลด...</option></select>
+  </div>
+
+  <!-- Credentials -->
+  <div class="section-label">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/></svg>
+    ข้อมูลไอดี
+  </div>
+  <div class="field">
+    <label>Gmail</label>
+    <input type="email" id="inputGmail" class="mono" placeholder="example@gmail.com">
+  </div>
+  <div class="field">
+    <label>รหัสผ่าน Gmail</label>
+    <input type="text" id="inputPassword" class="mono" placeholder="password123">
+  </div>
+
+  <div class="section-sep"></div>
+
+  <!-- Instruction section -->
+  <div class="section-label">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+    วิธีใช้ไอดี (แสดงให้ลูกค้าหลังชำระเงิน)
+  </div>
+
+  <!-- Template row -->
+  <div class="tpl-bar">
+    <select id="tplSelect" class="tpl-select"><option value="">— เลือก Template —</option></select>
+    <button class="tpl-btn load" id="tplLoadBtn" disabled>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+      ใช้
+    </button>
+    <button class="tpl-btn del" id="tplDeleteBtn" disabled>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M9 6V4h6v2"/></svg>
+      ลบ
+    </button>
+  </div>
+  <div class="tpl-name-row">
+    <input type="text" id="tplNameInput" class="tpl-name-input" placeholder="ชื่อ Template ใหม่...">
+    <button class="tpl-btn save" id="tplSaveBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      บันทึก Template
+    </button>
+  </div>
+
+  <div class="field">
+    <label>หัวข้อวิธีใช้</label>
+    <input type="text" id="inputInstTitle" placeholder="เช่น วิธีเข้าไอดี">
+  </div>
+  <div class="field">
+    <label>เนื้อหาวิธีใช้</label>
+    <textarea id="inputInstBody" placeholder="เช่น&#10;ไอดีนี้เชื่อม EA&#10;1.ล็อกอิน Gmail&#10;2.เข้าเกมแล้วกด Sign in EA&#10;..."></textarea>
+    <div class="hint">ลูกค้าจะเห็นข้อความนี้หลังชำระเงินสำเร็จ — เว้นช่องว่างถ้าไม่ต้องการแนบวิธีใช้</div>
+  </div>
+
+  <button class="submit-btn" id="addBtn">เพิ่มเข้าคลัง</button>
+  <div class="form-alert" id="addAlert"></div>
+</div>
+
+<!-- Inventory list -->
+<div class="card">
+  <div class="card-title">รายการในคลัง</div>
+  <div class="filter-bar">
+    <select id="filterProduct"><option value="">ทุกสินค้า</option></select>
+    <select id="filterStatus">
+      <option value="ready" selected>พร้อมขาย</option>
+      <option value="sold">ขายแล้ว</option>
+      <option value="">ทั้งหมด</option>
+    </select>
+  </div>
+  <div id="invList"><div class="empty-state">กำลังโหลด...</div></div>
+</div>
+
+<!-- Modal: ดู Credential + Instruction -->
+<div class="modal-overlay" id="credModal">
+  <div class="modal-sheet">
+    <button class="modal-close" id="credModalClose">&#x2715;</button>
+    <div class="modal-title">รายละเอียดไอดี</div>
+    <div class="modal-sub" id="credModalSub"></div>
+    <div id="credModalBody">
+      <div class="cred-loading">กำลังโหลด...</div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: แก้ไขไอดี (status=ready เท่านั้น) -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal-sheet">
+    <button class="modal-close" id="editModalClose">&#x2715;</button>
+    <div class="modal-title">แก้ไขข้อมูลไอดี</div>
+    <div class="modal-sub" id="editModalSub"></div>
+    <div id="editModalBody">
+      <div class="field">
+        <label>Gmail</label>
+        <input type="email" id="editGmail" class="mono" placeholder="example@gmail.com">
+      </div>
+      <div class="field">
+        <label>รหัสผ่าน <span style="font-weight:400;color:rgba(26,58,82,0.45);">(เว้นว่างถ้าไม่ต้องการเปลี่ยน)</span></label>
+        <input type="text" id="editPassword" class="mono" placeholder="ไม่กรอก = คงรหัสผ่านเดิม">
+      </div>
+      <div class="section-sep"></div>
+      <div class="section-label">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        วิธีใช้ไอดี
+      </div>
+      <div class="edit-tpl-bar">
+        <select id="editTplSelect" class="tpl-select"><option value="">— เลือก Template —</option></select>
+        <button class="tpl-btn load" id="editTplLoadBtn" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+          ใช้
+        </button>
+      </div>
+      <div class="field">
+        <label>หัวข้อวิธีใช้</label>
+        <input type="text" id="editInstTitle" placeholder="เช่น วิธีเข้าไอดี">
+      </div>
+      <div class="field">
+        <label>เนื้อหาวิธีใช้</label>
+        <textarea id="editInstBody" style="min-height:100px;" placeholder="เว้นว่างเพื่อลบวิธีใช้ออก"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="modal-btn cancel" id="editCancelBtn">ยกเลิก</button>
+        <button class="modal-btn confirm-edit" id="editConfirmBtn">บันทึก</button>
+      </div>
+      <div class="edit-form-alert" id="editAlert"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: ยืนยันลบไอดีพร้อมขาย -->
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal-sheet">
+    <button class="modal-close" id="deleteModalClose">&#x2715;</button>
+    <div class="modal-title">ลบไอดีนี้?</div>
+    <div class="modal-sub">ไอดีที่ยังไม่ได้ขาย</div>
+    <div class="warn-box">
+      <strong>ยืนยันการลบ:</strong> ไอดีนี้จะถูกลบออกจากคลังถาวร ไม่สามารถย้อนกลับได้
+      <div class="warn-email" id="deleteModalEmail"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn cancel" id="deleteCancelBtn">ยกเลิก</button>
+      <button class="modal-btn confirm-del" id="deleteConfirmBtn">ลบออกจากคลัง</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Force Delete ยืนยัน -->
+<div class="modal-overlay" id="forceModal">
+  <div class="modal-sheet">
+    <button class="modal-close" id="forceModalClose">&#x2715;</button>
+    <div class="modal-title">ปลดล็อกและลบไอดีนี้?</div>
+    <div class="modal-sub">ไอดีนี้ถูกผูกกับ Order แล้ว</div>
+    <div class="warn-box">
+      <strong>คำเตือน:</strong> การลบจะไม่สามารถย้อนกลับได้ และข้อมูลไอดีนี้จะหายไปถาวร<br>
+      ใช้เฉพาะกรณีที่ยืนยันแล้วว่าเป็น<strong>ไอดีทดสอบ</strong>ที่ไม่ต้องการเก็บ
+      <div class="warn-email" id="forceModalEmail"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn cancel" id="forceCancelBtn">ยกเลิก</button>
+      <button class="modal-btn confirm-del" id="forceConfirmBtn">ลบถาวร</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { auth, admin } from '../../js/api.js';
+
+const session = await auth.getSession();
+if (!session) { window.location.href = '/pages/login.html'; }
+
+const res = await fetch('/api/auth/profile', { headers: { Authorization: `Bearer ${session.access_token}` } });
+const { data: profile } = await res.json();
+if (profile?.role !== 'admin') { window.location.href = '/pages/shop.html'; }
+
+let products = [];
+
+// ── format วัน-เวลาแบบไทย ─────────────────────────────────
+function fmtDateTh(isoStr) {
+  if (!isoStr) return null;
+  const d = new Date(isoStr);
+  return d.toLocaleString('th-TH', {
+    year: 'numeric', month: 'short', day: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+    timeZone: 'Asia/Bangkok',
+  });
+}
+
+// ── SVG icons ────────────────────────────────────────────
+const iconEye    = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>`;
+const iconTrash  = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>`;
+const iconUnlock = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>`;
+const iconCopy   = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
+const iconDoc    = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`;
+const iconEdit   = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
+
+// ══════════════════════════════════════════════════════════
+// TEMPLATE SYSTEM — localStorage
+// Key: "inv_templates" → JSON array of { name, title, body }
+// ══════════════════════════════════════════════════════════
+const TPL_KEY = 'inv_templates';
+
+function tplLoad() {
+  try { return JSON.parse(localStorage.getItem(TPL_KEY) || '[]'); }
+  catch { return []; }
+}
+function tplSave(list) {
+  localStorage.setItem(TPL_KEY, JSON.stringify(list));
+}
+
+const tplSelect    = document.getElementById('tplSelect');
+const tplLoadBtn   = document.getElementById('tplLoadBtn');
+const tplSaveBtn   = document.getElementById('tplSaveBtn');
+const tplDeleteBtn = document.getElementById('tplDeleteBtn');
+const tplNameInput = document.getElementById('tplNameInput');
+const inputInstTitle = document.getElementById('inputInstTitle');
+const inputInstBody  = document.getElementById('inputInstBody');
+
+function renderTplOptions() {
+  const list = tplLoad();
+  const opts = list.map((t, i) =>
+    `<option value="${i}">${t.name}</option>`
+  ).join('');
+  tplSelect.innerHTML = `<option value="">— เลือก Template —</option>` + opts;
+  const hasSel = tplSelect.value !== '';
+  tplLoadBtn.disabled   = !hasSel;
+  tplDeleteBtn.disabled = !hasSel;
+}
+
+renderTplOptions();
+
+tplSelect.addEventListener('change', () => {
+  const hasSel = tplSelect.value !== '';
+  tplLoadBtn.disabled   = !hasSel;
+  tplDeleteBtn.disabled = !hasSel;
+});
+
+// โหลด template ลงฟิลด์
+tplLoadBtn.addEventListener('click', () => {
+  const idx  = Number(tplSelect.value);
+  const list = tplLoad();
+  if (!list[idx]) return;
+  inputInstTitle.value = list[idx].title;
+  inputInstBody.value  = list[idx].body;
+});
+
+// บันทึก template ใหม่
+tplSaveBtn.addEventListener('click', () => {
+  const name  = tplNameInput.value.trim();
+  const title = inputInstTitle.value.trim();
+  const body  = inputInstBody.value.trim();
+  if (!name)  { alert('กรุณาใส่ชื่อ Template'); return; }
+  if (!title && !body) { alert('กรุณากรอกหัวข้อหรือเนื้อหาก่อนบันทึก'); return; }
+  const list = tplLoad();
+  // ถ้าชื่อซ้ำให้ถาม overwrite
+  const dup = list.findIndex(t => t.name === name);
+  if (dup >= 0) {
+    if (!confirm(`Template "${name}" มีอยู่แล้ว ต้องการเขียนทับหรือไม่?`)) return;
+    list[dup] = { name, title, body };
+  } else {
+    list.push({ name, title, body });
+  }
+  tplSave(list);
+  renderTplOptions();
+  tplNameInput.value = '';
+  // flash feedback
+  tplSaveBtn.textContent = 'บันทึกแล้ว!';
+  setTimeout(() => { tplSaveBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> บันทึก Template`; }, 1500);
+});
+
+// ลบ template
+tplDeleteBtn.addEventListener('click', () => {
+  const idx  = Number(tplSelect.value);
+  const list = tplLoad();
+  if (!list[idx]) return;
+  if (!confirm(`ลบ Template "${list[idx].name}" ?`)) return;
+  list.splice(idx, 1);
+  tplSave(list);
+  renderTplOptions();
+});
+
+// ── Load products ─────────────────────────────────────────
+async function loadProducts() {
+  const { data } = await admin.products.list();
+  products = data;
+  const options = data.map(p => `<option value="${p.key}">${p.label}</option>`).join('');
+  document.getElementById('productSelect').innerHTML = options || '<option value="">ไม่มีสินค้า</option>';
+  document.getElementById('filterProduct').innerHTML =
+    `<option value="">ทุกสินค้า</option>` + options;
+}
+
+// ── Load inventory list ───────────────────────────────────
+async function loadInventory() {
+  const listEl = document.getElementById('invList');
+  listEl.innerHTML = `<div class="empty-state">กำลังโหลด...</div>`;
+
+  const productKey = document.getElementById('filterProduct').value || null;
+  const status     = document.getElementById('filterStatus').value || null;
+
+  try {
+    const { data, ready_summary } = await admin.inventory.list({ productKey, status });
+
+    // สรุปคงเหลือ
+    const summaryEl = document.getElementById('summaryList');
+    const chips = products.map(p => `
+      <div class="summary-chip">${p.label}: <span class="count">${ready_summary[p.key] ?? 0}</span></div>
+    `).join('');
+    summaryEl.innerHTML = chips || `<div class="hint">ยังไม่มีสินค้า</div>`;
+
+    if (!data.length) {
+      listEl.innerHTML = `<div class="empty-state">ไม่พบรายการ</div>`;
+      return;
+    }
+
+    const productLabel = (key) => products.find(p => p.key === key)?.label ?? key;
+
+    listEl.innerHTML = data.map(row => {
+      const soldAtStr = row.sold_at ? `<div class="inv-sold-at">ขายเมื่อ ${fmtDateTh(row.sold_at)}</div>` : '';
+      const isSold    = row.status === 'sold';
+      const hasOrder  = !!row.order_id;
+      const hasInst   = !!(row.instruction_title || row.instruction_body);
+
+      let deleteBtn = '';
+      let editBtn   = '';
+      if (!hasOrder && row.status === 'ready') {
+        deleteBtn = `<button class="action-btn btn-del del-btn" data-id="${row.id}" data-email="${row.gmail}">${iconTrash} ลบ</button>`;
+        editBtn   = `<button class="action-btn btn-edit edit-btn" data-id="${row.id}" data-email="${row.gmail}">${iconEdit} แก้ไข</button>`;
+      } else {
+        deleteBtn = `<button class="action-btn btn-force force-btn" data-id="${row.id}" data-email="${row.gmail}">${iconUnlock} ปลดล็อกลบ</button>`;
+      }
+
+      const instBadge = hasInst
+        ? `<span class="inv-has-inst">${iconDoc} มีวิธีใช้</span>`
+        : '';
+
+      return `
+        <div class="inv-row">
+          <div class="inv-row-top">
+            <div class="inv-row-meta">
+              <div class="inv-email">${row.gmail}</div>
+              <div class="inv-product">${productLabel(row.product_key)}</div>
+              ${soldAtStr}
+              ${instBadge}
+            </div>
+            <span class="inv-status ${row.status}">${isSold ? 'ขายแล้ว' : 'พร้อมขาย'}</span>
+          </div>
+          <div class="inv-row-actions">
+            <button class="action-btn btn-view view-btn" data-id="${row.id}" data-email="${row.gmail}">${iconEye} ดูรายละเอียด</button>
+            ${editBtn}
+            ${deleteBtn}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // ── ปุ่มลบปกติ → เปิด modal ยืนยันก่อน (ไม่ลบทันที)
+    listEl.querySelectorAll('.del-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        openDeleteModal(btn.dataset.id, btn.dataset.email);
+      });
+    });
+
+    // ── ปุ่มดูรายละเอียด
+    listEl.querySelectorAll('.view-btn').forEach(btn => {
+      btn.addEventListener('click', () => openCredModal(btn.dataset.id, btn.dataset.email));
+    });
+
+    // ── ปุ่มแก้ไข (status=ready เท่านั้น)
+    listEl.querySelectorAll('.edit-btn').forEach(btn => {
+      btn.addEventListener('click', () => openEditModal(btn.dataset.id, btn.dataset.email));
+    });
+
+    // ── ปุ่มปลดล็อกลบ
+    listEl.querySelectorAll('.force-btn').forEach(btn => {
+      btn.addEventListener('click', () => openForceModal(btn.dataset.id, btn.dataset.email));
+    });
+
+  } catch (e) {
+    listEl.innerHTML = `<div class="empty-state">โหลดไม่สำเร็จ</div>`;
+  }
+}
+
+function showInlineErr(btn, msg) {
+  const err = document.createElement('span');
+  err.style.cssText = 'font-size:11px;color:var(--danger);margin-left:6px;';
+  err.textContent = msg;
+  btn.parentNode.appendChild(err);
+  setTimeout(() => err.remove(), 3000);
+}
+
+// ── Modal: ดู Credential + Instruction ───────────────────
+const credModal     = document.getElementById('credModal');
+const credModalSub  = document.getElementById('credModalSub');
+const credModalBody = document.getElementById('credModalBody');
+
+function openCredModal(id, email) {
+  credModalSub.textContent = email;
+  credModalBody.innerHTML  = `<div class="cred-loading">กำลังโหลด...</div>`;
+  credModal.classList.add('open');
+
+  admin.inventory.getCredential(id).then(({ data }) => {
+    // instruction block
+    let instHtml = '';
+    if (data.instruction_title || data.instruction_body) {
+      instHtml = `
+        <div class="inst-block">
+          <div class="inst-block-title">${iconDoc} วิธีใช้ที่แนบมา (ลูกค้าจะเห็นข้อความนี้)</div>
+          ${data.instruction_title ? `<div class="inst-block-heading">${escHtml(data.instruction_title)}</div>` : ''}
+          ${data.instruction_body  ? `<div class="inst-block-body">${escHtml(data.instruction_body)}</div>`   : ''}
+        </div>
+      `;
+    }
+
+    credModalBody.innerHTML = `
+      <div class="cred-field">
+        <div class="cred-label">Email</div>
+        <div class="cred-value">
+          <span class="cred-text">${data.gmail}</span>
+          <button class="copy-btn" data-copy="${data.gmail}" title="คัดลอก">${iconCopy}</button>
+        </div>
+      </div>
+      <div class="cred-field">
+        <div class="cred-label">Password</div>
+        <div class="cred-value">
+          <span class="cred-text">${data.password}</span>
+          <button class="copy-btn" data-copy="${data.password}" title="คัดลอก">${iconCopy}</button>
+        </div>
+      </div>
+      ${data.sold_at ? `<div class="hint" style="margin-top:4px;">ขายเมื่อ ${fmtDateTh(data.sold_at)}</div>` : ''}
+      ${instHtml}
+    `;
+    credModalBody.querySelectorAll('.copy-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        navigator.clipboard.writeText(btn.dataset.copy).catch(() => {});
+        btn.style.color = 'var(--green-go)';
+        setTimeout(() => { btn.style.color = ''; }, 1200);
+      });
+    });
+  }).catch(e => {
+    credModalBody.innerHTML = `<div class="cred-err">${e.message}</div>`;
+  });
+}
+
+function closeCredModal() { credModal.classList.remove('open'); }
+document.getElementById('credModalClose').addEventListener('click', closeCredModal);
+credModal.addEventListener('click', e => { if (e.target === credModal) closeCredModal(); });
+
+// ── Modal: แก้ไขไอดี ──────────────────────────────────────
+const editModal       = document.getElementById('editModal');
+const editModalSub    = document.getElementById('editModalSub');
+const editGmail       = document.getElementById('editGmail');
+const editPassword    = document.getElementById('editPassword');
+const editInstTitle   = document.getElementById('editInstTitle');
+const editInstBody    = document.getElementById('editInstBody');
+const editConfirmBtn  = document.getElementById('editConfirmBtn');
+const editCancelBtn   = document.getElementById('editCancelBtn');
+const editAlert       = document.getElementById('editAlert');
+const editTplSelect   = document.getElementById('editTplSelect');
+const editTplLoadBtn  = document.getElementById('editTplLoadBtn');
+let pendingEditId     = null;
+
+function syncEditTplOptions() {
+  const list = tplLoad();
+  const opts = list.map((t, i) => `<option value="${i}">${t.name}</option>`).join('');
+  editTplSelect.innerHTML = `<option value="">— เลือก Template —</option>` + opts;
+  editTplLoadBtn.disabled = true;
+}
+
+editTplSelect.addEventListener('change', () => {
+  editTplLoadBtn.disabled = editTplSelect.value === '';
+});
+
+editTplLoadBtn.addEventListener('click', () => {
+  const idx  = Number(editTplSelect.value);
+  const list = tplLoad();
+  if (!list[idx]) return;
+  editInstTitle.value = list[idx].title;
+  editInstBody.value  = list[idx].body;
+});
+
+function openEditModal(id, email) {
+  pendingEditId = id;
+  editModalSub.textContent = email;
+
+  // reset fields
+  editGmail.value      = '';
+  editPassword.value   = '';
+  editInstTitle.value  = '';
+  editInstBody.value   = '';
+  editAlert.className  = 'edit-form-alert';
+  editAlert.textContent = '';
+  editConfirmBtn.disabled    = false;
+  editConfirmBtn.textContent = 'บันทึก';
+
+  syncEditTplOptions();
+
+  // lazy-load ข้อมูลปัจจุบันเพื่อ pre-fill
+  admin.inventory.getCredential(id).then(({ data }) => {
+    editGmail.value     = data.gmail      ?? '';
+    editInstTitle.value = data.instruction_title ?? '';
+    editInstBody.value  = data.instruction_body  ?? '';
+    // ไม่ pre-fill password — ให้กรอกใหม่ถ้าต้องการเปลี่ยน
+  }).catch(() => {
+    // ถ้า load ไม่ได้ให้กรอกเอง — ยังบันทึกได้ตามปกติ
+  });
+
+  editModal.classList.add('open');
+}
+
+function closeEditModal() {
+  editModal.classList.remove('open');
+  pendingEditId = null;
+}
+
+editConfirmBtn.addEventListener('click', async () => {
+  if (!pendingEditId) return;
+
+  const gmail    = editGmail.value.trim();
+  const password = editPassword.value.trim();
+
+  if (!gmail) {
+    editAlert.textContent = 'Gmail ไม่ควรเป็นค่าว่าง';
+    editAlert.className   = 'edit-form-alert show error';
+    return;
+  }
+
+  editConfirmBtn.disabled    = true;
+  editConfirmBtn.textContent = 'กำลังบันทึก...';
+  editAlert.className        = 'edit-form-alert';
+
+  try {
+    const fields = {
+      gmail,
+      instructionTitle: editInstTitle.value.trim() || null,
+      instructionBody:  editInstBody.value.trim()  || null,
+    };
+    // ส่ง password เฉพาะเมื่อกรอก — ไม่ส่งหมายถึงคงรหัสผ่านเดิม
+    if (password) fields.password = password;
+
+    await admin.inventory.update(pendingEditId, fields);
+
+    editAlert.textContent = 'บันทึกสำเร็จ';
+    editAlert.className   = 'edit-form-alert show success';
+    setTimeout(() => {
+      closeEditModal();
+      loadInventory();
+    }, 800);
+  } catch (e) {
+    editAlert.textContent = e.message;
+    editAlert.className   = 'edit-form-alert show error';
+    editConfirmBtn.disabled    = false;
+    editConfirmBtn.textContent = 'บันทึก';
+  }
+});
+
+document.getElementById('editModalClose').addEventListener('click', closeEditModal);
+editCancelBtn.addEventListener('click', closeEditModal);
+editModal.addEventListener('click', e => { if (e.target === editModal) closeEditModal(); });
+
+// ── Modal: Force Delete ───────────────────────────────────
+const forceModal      = document.getElementById('forceModal');
+const forceModalEmail = document.getElementById('forceModalEmail');
+const forceConfirmBtn = document.getElementById('forceConfirmBtn');
+const forceCancelBtn  = document.getElementById('forceCancelBtn');
+let   pendingForceId  = null;
+
+function openForceModal(id, email) {
+  pendingForceId = id;
+  forceModalEmail.textContent = email;
+  forceConfirmBtn.disabled    = false;
+  forceConfirmBtn.textContent = 'ลบถาวร';
+  forceModal.classList.add('open');
+}
+function closeForceModal() {
+  forceModal.classList.remove('open');
+  pendingForceId = null;
+}
+
+forceConfirmBtn.addEventListener('click', async () => {
+  if (!pendingForceId) return;
+  forceConfirmBtn.disabled    = true;
+  forceConfirmBtn.textContent = 'กำลังลบ...';
+  try {
+    await admin.inventory.forceDelete(pendingForceId);
+    closeForceModal();
+    loadInventory();
+  } catch (e) {
+    forceConfirmBtn.textContent = 'ลบถาวร';
+    forceConfirmBtn.disabled    = false;
+    const warnBox = forceModal.querySelector('.warn-box');
+    let errEl = forceModal.querySelector('.force-err');
+    if (!errEl) {
+      errEl = document.createElement('div');
+      errEl.className = 'force-err';
+      errEl.style.cssText = 'color:var(--danger);font-size:12px;margin-top:8px;';
+      warnBox.appendChild(errEl);
+    }
+    errEl.textContent = e.message;
+  }
+});
+
+document.getElementById('forceModalClose').addEventListener('click', closeForceModal);
+forceCancelBtn.addEventListener('click', closeForceModal);
+forceModal.addEventListener('click', e => { if (e.target === forceModal) closeForceModal(); });
+
+// ── Modal: ยืนยันลบไอดีพร้อมขาย ─────────────────────────
+const deleteModal      = document.getElementById('deleteModal');
+const deleteModalEmail = document.getElementById('deleteModalEmail');
+const deleteConfirmBtn = document.getElementById('deleteConfirmBtn');
+const deleteCancelBtn  = document.getElementById('deleteCancelBtn');
+let   pendingDeleteId  = null;
+
+function openDeleteModal(id, email) {
+  pendingDeleteId = id;
+  deleteModalEmail.textContent = email;
+  deleteConfirmBtn.disabled    = false;
+  deleteConfirmBtn.textContent = 'ลบออกจากคลัง';
+  deleteModal.classList.add('open');
+}
+function closeDeleteModal() {
+  deleteModal.classList.remove('open');
+  pendingDeleteId = null;
+}
+
+deleteConfirmBtn.addEventListener('click', async () => {
+  if (!pendingDeleteId) return;
+  deleteConfirmBtn.disabled    = true;
+  deleteConfirmBtn.textContent = 'กำลังลบ...';
+  try {
+    await admin.inventory.remove(pendingDeleteId);
+    closeDeleteModal();
+    loadInventory();
+  } catch (e) {
+    deleteConfirmBtn.disabled    = false;
+    deleteConfirmBtn.textContent = 'ลบออกจากคลัง';
+    // แสดง error ใน warn-box
+    let errEl = deleteModal.querySelector('.delete-err');
+    if (!errEl) {
+      errEl = document.createElement('div');
+      errEl.className = 'delete-err';
+      errEl.style.cssText = 'color:var(--danger);font-size:12px;margin-top:8px;';
+      deleteModal.querySelector('.warn-box').appendChild(errEl);
+    }
+    errEl.textContent = e.message;
+  }
+});
+
+document.getElementById('deleteModalClose').addEventListener('click', closeDeleteModal);
+deleteCancelBtn.addEventListener('click', closeDeleteModal);
+deleteModal.addEventListener('click', e => { if (e.target === deleteModal) closeDeleteModal(); });
+
+// ── Filters ───────────────────────────────────────────────
+document.getElementById('filterProduct').addEventListener('change', loadInventory);
+document.getElementById('filterStatus').addEventListener('change', loadInventory);
+
+// ── Add one ID ────────────────────────────────────────────
+document.getElementById('addBtn').addEventListener('click', async () => {
+  const productKey     = document.getElementById('productSelect').value;
+  const gmail          = document.getElementById('inputGmail').value.trim();
+  const password       = document.getElementById('inputPassword').value.trim();
+  const instructionTitle = inputInstTitle.value.trim();
+  const instructionBody  = inputInstBody.value.trim();
+  const alertEl  = document.getElementById('addAlert');
+  const btn      = document.getElementById('addBtn');
+
+  if (!productKey) {
+    alertEl.textContent = 'กรุณาเลือกสินค้า';
+    alertEl.className = 'form-alert show error'; return;
+  }
+  if (!gmail) {
+    alertEl.textContent = 'กรุณากรอก Gmail';
+    alertEl.className = 'form-alert show error'; return;
+  }
+  if (!password) {
+    alertEl.textContent = 'กรุณากรอกรหัสผ่าน';
+    alertEl.className = 'form-alert show error'; return;
+  }
+
+  btn.disabled = true; btn.textContent = 'กำลังเพิ่ม...';
+  try {
+    await admin.inventory.addOne({ productKey, gmail, password, instructionTitle, instructionBody });
+    alertEl.textContent = 'เพิ่มไอดีเข้าคลังสำเร็จ';
+    alertEl.className = 'form-alert show success';
+    document.getElementById('inputGmail').value    = '';
+    document.getElementById('inputPassword').value = '';
+    loadInventory();
+  } catch (e) {
+    alertEl.textContent = e.message;
+    alertEl.className = 'form-alert show error';
+  }
+  btn.disabled = false; btn.textContent = 'เพิ่มเข้าคลัง';
+});
+
+// ── helper: escape HTML ───────────────────────────────────
+function escHtml(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Init ──────────────────────────────────────────────────
+await loadProducts();
+await loadInventory();
+</script>
+</body>
+</html>

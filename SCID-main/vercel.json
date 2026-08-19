@@ -1,0 +1,31 @@
+{
+  "buildCommand": "bash scripts/inject-env.sh",
+  "outputDirectory": ".",
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "rewrites": [
+    { "source": "/shop",         "destination": "/pages/shop.html" },
+    { "source": "/login",        "destination": "/pages/login.html" },
+    { "source": "/history",      "destination": "/pages/history.html" },
+    { "source": "/checkout",     "destination": "/pages/checkout.html" },
+    { "source": "/order/:id",    "destination": "/pages/order-detail.html" },
+    { "source": "/admin",        "destination": "/pages/admin/dashboard.html" },
+    { "source": "/admin/orders", "destination": "/pages/admin/orders.html" }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options",        "value": "DENY" },
+        { "key": "Referrer-Policy",        "value": "strict-origin-when-cross-origin" }
+      ]
+    },
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store" }
+      ]
+    }
+  ]
+}

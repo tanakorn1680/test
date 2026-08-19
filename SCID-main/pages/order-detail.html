@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>รายละเอียดออเดอร์</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+  :root{--navy:#1A6BA0;--sky:#2196C9;--gold:#D9A330;--gold-deep:#B9821F;--ink:#1A3A52;--line:rgba(26,106,160,0.18);--muted:rgba(26,58,82,0.55);--green-go:#3F8557;--danger:#E04433;}
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  html,body{background:#81CFF0;}
+  body{font-family:'IBM Plex Sans Thai',sans-serif;color:var(--ink);min-height:100vh;padding:0 0 40px;}
+  .topbar{display:flex;align-items:center;gap:10px;padding:14px 16px;background:rgba(255,255,255,0.15);backdrop-filter:blur(8px);position:sticky;top:0;z-index:20;}
+  .back-btn{color:#fff;font-size:13px;font-weight:600;text-decoration:none;}
+  .topbar-title{font-family:'Baloo 2',sans-serif;font-weight:700;font-size:15px;color:#fff;flex:1;}
+  .page-body{padding:14px;display:flex;flex-direction:column;gap:12px;}
+  .section-card{background:rgba(255,255,255,0.97);border-radius:14px;padding:16px;box-shadow:0 3px 12px rgba(0,40,80,0.12);}
+  .section-title{font-size:12.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;}
+  .status-badge-lg{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;padding:6px 14px;border-radius:20px;margin-bottom:14px;}
+  .status-badge-lg.pending{background:rgba(26,58,82,0.08);color:var(--muted);}
+  .status-badge-lg.awaiting_review{background:rgba(217,163,48,0.15);color:var(--gold-deep);}
+  .status-badge-lg.delivered{background:rgba(63,133,87,0.12);color:var(--green-go);}
+  .status-badge-lg.cancelled{background:rgba(224,68,51,0.1);color:var(--danger);}
+  .detail-row{display:flex;justify-content:space-between;align-items:baseline;padding:9px 0;border-bottom:1px dotted var(--line);font-size:13.5px;}
+  .detail-row:last-child{border-bottom:none;}
+  .detail-row .lbl{color:var(--muted);font-size:12.5px;flex-shrink:0;margin-right:12px;}
+  .detail-row .val{font-weight:600;text-align:right;}
+  .credential-card{background:linear-gradient(135deg,#0E4C7A 0%,#1A6BA0 100%);border-radius:14px;padding:16px;color:#fff;}
+  .credential-header{display:flex;align-items:center;gap:8px;margin-bottom:14px;}
+  .credential-title-text{font-family:'Baloo 2',sans-serif;font-size:15px;font-weight:700;}
+  .cred-row{background:rgba(255,255,255,0.1);border-radius:10px;padding:12px 14px;margin-bottom:8px;}
+  .cred-label{font-size:11px;color:rgba(255,255,255,0.6);margin-bottom:5px;font-weight:600;}
+  .cred-value-row{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+  .cred-value{font-family:'Space Mono',monospace;font-size:13.5px;font-weight:700;color:#fff;word-break:break-all;flex:1;}
+  .cred-value.masked{filter:blur(5px);user-select:none;transition:filter .2s ease;}
+  .cred-actions{display:flex;gap:6px;flex-shrink:0;}
+  .cred-btn{padding:5px 10px;background:rgba(255,255,255,0.2);border:none;border-radius:7px;color:#fff;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;}
+  /* instruction block */
+  .inst-card{background:rgba(255,255,255,0.12);border-radius:11px;padding:14px;margin-top:10px;}
+  .inst-card-label{font-size:10.5px;color:rgba(255,255,255,0.55);font-weight:700;letter-spacing:.4px;text-transform:uppercase;margin-bottom:6px;}
+  .inst-card-heading{font-size:14px;font-weight:700;color:#fff;margin-bottom:8px;}
+  .inst-card-body{font-size:13px;color:rgba(255,255,255,0.88);line-height:1.75;white-space:pre-wrap;}
+  .pending-msg{background:rgba(217,163,48,0.08);border:1px solid rgba(217,163,48,0.25);border-radius:10px;padding:14px 16px;text-align:center;}
+  .pending-msg .icon{display:flex;justify-content:center;margin-bottom:6px;color:var(--muted);}
+  .pending-msg .title{font-size:14px;font-weight:700;color:var(--gold-deep);margin-bottom:4px;}
+  .pending-msg .sub{font-size:12.5px;color:var(--muted);}
+  .skeleton{text-align:center;padding:60px 20px;color:rgba(255,255,255,0.8);}
+  .topbar{background:rgba(255,255,255,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-bottom:1px solid rgba(255,255,255,0.25);}
+  .section-card{background:rgba(255,255,255,0.92);border:1.5px solid rgba(255,255,255,0.65);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 4px 18px rgba(0,40,80,0.12);}
+  .cred-btn{transition:background .15s,transform .12s cubic-bezier(.32,.72,0,1);}
+  .cred-btn:active{transform:scale(0.93);background:rgba(255,255,255,0.35);}
+  .back-btn{transition:opacity .15s;}
+  .back-btn:active{opacity:0.65;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="/pages/history.html" class="back-btn">←</a>
+  <div class="topbar-title">รายละเอียดออเดอร์</div>
+</div>
+
+<div class="page-body" id="pageBody">
+  <div class="skeleton">กำลังโหลด...</div>
+</div>
+
+<script type="module">
+import { auth, orders } from '../js/api.js';
+
+const session = await auth.getSession();
+if (!session) { window.location.href = '/pages/login.html'; }
+
+const orderId = new URLSearchParams(window.location.search).get('id');
+const pageBody = document.getElementById('pageBody');
+
+const STATUS = {
+  pending:         { label:'รอชำระเงิน' },
+  awaiting_review: { label:'รอตรวจสอบสลิป' },
+  delivered:       { label:'ส่งข้อมูลแล้ว' },
+  cancelled:       { label:'ยกเลิก' },
+};
+
+function fmtDate(iso) {
+  if (!iso) return '-';
+  return new Date(iso).toLocaleString('th-TH', { year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+}
+
+function escHtml(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+if (!orderId) {
+  pageBody.innerHTML = `<div class="skeleton">ไม่พบ Order ID</div>`;
+} else {
+  try {
+    const { data: order } = await orders.detail(orderId);
+    const s = STATUS[order.status] || { label: order.status };
+
+    // credential section
+    let credHtml = '';
+    if (order.status === 'delivered' && order.credential) {
+      const pwFieldHtml = order.credential.decrypt_failed ? `
+          <div class="cred-row">
+            <div class="cred-label">รหัสผ่าน Gmail</div>
+            <div class="form-alert show error" style="margin-top:4px;">
+              เกิดปัญหาในการแสดงรหัสผ่าน กรุณาติดต่อแอดมินพร้อมแจ้งเลขที่ออเดอร์นี้
+            </div>
+          </div>` : `
+          <div class="cred-row">
+            <div class="cred-label">รหัสผ่าน Gmail</div>
+            <div class="cred-value-row">
+              <div class="cred-value masked" id="pwVal" data-pw="${order.credential.password}">${order.credential.password}</div>
+              <div class="cred-actions">
+                <button class="cred-btn" id="togglePwBtn">แสดง</button>
+                <button class="cred-btn" id="copyPwBtn">คัดลอก</button>
+              </div>
+            </div>
+          </div>`;
+
+      // instruction block (แสดงเฉพาะเมื่อมีข้อมูล)
+      const instTitle = order.credential.instruction_title || '';
+      const instBody  = order.credential.instruction_body  || '';
+      const instHtml  = (instTitle || instBody) ? `
+        <div class="inst-card">
+          ${instTitle ? `<div class="inst-card-heading">${escHtml(instTitle)}</div>` : ''}
+          ${instBody  ? `<div class="inst-card-body">${escHtml(instBody)}</div>`    : ''}
+        </div>
+      ` : '';
+
+      credHtml = `
+        <div class="credential-card" id="credCard">
+          <div class="credential-header">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/></svg>
+            <span class="credential-title-text">ข้อมูลไอดีของคุณ</span>
+          </div>
+          <div class="cred-row">
+            <div class="cred-label">Gmail</div>
+            <div class="cred-value-row">
+              <div class="cred-value" id="gmailVal">${order.credential.gmail}</div>
+              <div class="cred-actions"><button class="cred-btn" id="copyGmailBtn">คัดลอก</button></div>
+            </div>
+          </div>
+          ${pwFieldHtml}
+          ${instHtml}
+        </div>
+      `;
+    } else if (order.status === 'awaiting_review') {
+      credHtml = `
+        <div class="pending-msg">
+          <div class="icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+          <div class="title">กำลังรอแอดมินตรวจสอบ</div>
+          <div class="sub">เมื่อได้รับการยืนยัน ไอดีจะปรากฏที่นี่</div>
+        </div>
+      `;
+    }
+
+    pageBody.innerHTML = `
+      <div class="section-card">
+        <span class="status-badge-lg ${order.status}">${s.label}</span>
+        <div class="detail-row"><span class="lbl">สินค้า</span><span class="val">${order.product_label}</span></div>
+        <div class="detail-row"><span class="lbl">ยอดสินค้า</span><span class="val" style="color:var(--gold);font-family:'Baloo 2',sans-serif;font-size:16px;">฿${Number(order.amount).toLocaleString()}</span></div>
+        ${order.unique_amount && order.status === 'pending' ? `<div class="detail-row"><span class="lbl" style="color:var(--danger);">โอนยอดนี้</span><span class="val" style="color:var(--danger);font-family:'Baloo 2',sans-serif;font-size:16px;font-weight:800;">฿${Number(order.unique_amount).toFixed(2)}</span></div>` : ''}
+        <div class="detail-row"><span class="lbl">วันที่สั่ง</span><span class="val">${fmtDate(order.created_at)}</span></div>
+        <div class="detail-row"><span class="lbl">อัปเดตล่าสุด</span><span class="val">${fmtDate(order.updated_at)}</span></div>
+        ${order.reject_reason ? `<div class="detail-row"><span class="lbl" style="color:var(--danger);">เหตุผลปฏิเสธ</span><span class="val" style="color:var(--danger);">${order.reject_reason}</span></div>` : ''}
+      </div>
+      ${credHtml}
+    `;
+
+    // listeners
+    document.getElementById('copyGmailBtn')?.addEventListener('click', async (e) => {
+      await navigator.clipboard.writeText(document.getElementById('gmailVal').textContent);
+      e.target.textContent = 'คัดลอกแล้ว!';
+      setTimeout(() => { e.target.textContent = 'คัดลอก'; }, 1500);
+    });
+
+    let pwVisible = false;
+    document.getElementById('togglePwBtn')?.addEventListener('click', (e) => {
+      pwVisible = !pwVisible;
+      document.getElementById('pwVal').classList.toggle('masked', !pwVisible);
+      e.target.textContent = pwVisible ? 'ซ่อน' : 'แสดง';
+    });
+
+    document.getElementById('copyPwBtn')?.addEventListener('click', async (e) => {
+      const pwEl = document.getElementById('pwVal');
+      await navigator.clipboard.writeText(pwEl.dataset.pw || pwEl.textContent.trim());
+      e.target.textContent = 'คัดลอกแล้ว!';
+      setTimeout(() => { e.target.textContent = 'คัดลอก'; }, 1500);
+    });
+
+  } catch (e) {
+    pageBody.innerHTML = `<div class="skeleton">${e.message}</div>`;
+  }
+}
+</script>
+</body>
+</html>

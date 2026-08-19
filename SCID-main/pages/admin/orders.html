@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ออเดอร์ & ตรวจสลิป — Admin</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+  :root{--navy:#1A6BA0;--gold:#D9A330;--ink:#1A3A52;--green-go:#3F8557;--danger:#E04433;--line:rgba(26,106,160,0.15);}
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  body{font-family:'IBM Plex Sans Thai',sans-serif;background:#81CFF0;color:var(--ink);min-height:100vh;padding:16px 14px 40px;}
+  .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+  .back-link{font-size:13px;font-weight:600;color:var(--navy);text-decoration:none;}
+  .page-title{font-family:'Baloo 2',sans-serif;font-size:18px;font-weight:800;margin-bottom:14px;}
+  .filter-bar{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+  .filter-input,.filter-select{padding:9px 12px;border:1.5px solid var(--line);border-radius:8px;font-size:13px;font-family:'IBM Plex Sans Thai',sans-serif;background:#fff;flex:1;min-width:140px;}
+  .order-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;}
+  .order-card{background:#fff;border-radius:12px;padding:11px 13px;box-shadow:0 2px 10px rgba(0,40,80,0.08);border-left:4px solid transparent;}
+  .order-card.awaiting_review{border-left-color:var(--gold);}
+  .order-card.delivered{border-left-color:var(--green-go);}
+  .order-card.pending{border-left-color:rgba(26,58,82,0.2);}
+  .order-top{display:flex;justify-content:space-between;margin-bottom:5px;}
+  .order-id{font-size:10.5px;color:rgba(26,58,82,0.5);font-family:'Space Mono',monospace;}
+  .status-pill{font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;}
+  .status-pill.awaiting_review{background:rgba(217,163,48,0.15);color:#B9821F;}
+  .status-pill.delivered{background:rgba(63,133,87,0.12);color:var(--green-go);}
+  .status-pill.pending{background:rgba(26,58,82,0.08);color:rgba(26,58,82,0.6);}
+  .status-pill.cancelled{background:rgba(224,68,51,0.1);color:var(--danger);}
+  .order-email{font-size:11.5px;color:rgba(26,58,82,0.6);margin-bottom:2px;}
+  .order-product{font-size:12.5px;font-weight:600;margin-bottom:3px;}
+  .order-amount{font-family:'Baloo 2',sans-serif;font-weight:800;color:var(--gold);font-size:15px;margin-bottom:8px;}
+  .view-btn{width:100%;padding:7px 0;background:var(--navy);color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:700;font-family:'Baloo 2',sans-serif;cursor:pointer;}
+  .empty-state{grid-column:1/-1;text-align:center;padding:60px 20px;color:rgba(26,58,82,0.5);}
+  /* Modal */
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);align-items:flex-start;justify-content:center;z-index:50;padding:20px 16px;overflow-y:auto;}
+  .modal-overlay.show{display:flex;}
+  .modal-box{background:#fff;border-radius:14px;padding:20px;width:100%;max-width:480px;margin-top:20px;}
+  .modal-title{font-size:16px;font-weight:700;margin-bottom:14px;}
+  .slip-img{width:100%;border-radius:10px;margin-bottom:14px;cursor:zoom-in;}
+  .detail-row{display:flex;justify-content:space-between;padding:7px 0;font-size:13px;border-bottom:1px dotted var(--line);}
+  .detail-row:last-child{border-bottom:none;}
+  .detail-row .label{color:rgba(26,58,82,0.55);}
+  .detail-row .value{font-weight:600;}
+  .action-row{display:flex;gap:8px;margin-top:16px;}
+  .modal-btn{flex:1;padding:11px 0;border:none;border-radius:9px;font-size:13px;font-weight:700;font-family:'Baloo 2',sans-serif;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;}
+  .modal-btn svg{width:15px;height:15px;flex-shrink:0;}
+  .modal-btn.approve{background:var(--green-go);color:#fff;}
+  .modal-btn.reject-btn{background:rgba(224,68,51,0.1);color:var(--danger);}
+  .modal-btn.close-btn{background:rgba(26,58,82,0.08);color:var(--ink);}
+  .modal-btn:disabled{opacity:0.5;cursor:not-allowed;}
+  .form-alert{padding:9px 11px;border-radius:8px;font-size:12.5px;margin-top:10px;display:none;}
+  .form-alert.show{display:block;}
+  .form-alert.error{background:rgba(224,68,51,0.1);color:var(--danger);}
+  .form-alert.success{background:rgba(63,133,87,0.1);color:var(--green-go);}
+  .reject-box{margin-top:12px;}
+  .reject-box textarea{width:100%;padding:10px;border:1.5px solid var(--line);border-radius:8px;font-family:'IBM Plex Sans Thai',sans-serif;font-size:13px;resize:vertical;min-height:60px;}
+  .lightbox{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:100;align-items:center;justify-content:center;padding:20px;}
+  .lightbox.show{display:flex;}
+  .lightbox img{max-width:100%;max-height:100%;border-radius:8px;}
+  .order-card{background:rgba(255,255,255,0.92);border:1.5px solid rgba(255,255,255,0.65);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);transition:transform .12s cubic-bezier(.32,.72,0,1);}
+  .order-card:active{transform:scale(0.99);}
+  .filter-input,.filter-select{transition:border-color .15s,box-shadow .15s;}
+  .filter-input:focus,.filter-select:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 3px rgba(33,150,201,0.15);}
+  .view-btn{transition:opacity .18s,transform .12s cubic-bezier(.32,.72,0,1),box-shadow .18s;box-shadow:0 3px 10px rgba(26,106,160,0.2);}
+  .view-btn:active{transform:scale(0.96);opacity:0.88;box-shadow:0 1px 4px rgba(26,106,160,0.12);}
+  .modal-box{background:rgba(255,255,255,0.97);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);}
+  .modal-btn{transition:opacity .15s,transform .12s cubic-bezier(.32,.72,0,1);}
+  .modal-btn:active{transform:scale(0.96);opacity:0.88;}
+  .back-link{transition:opacity .15s;}
+  .back-link:active{opacity:0.65;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="/pages/admin/dashboard.html" class="back-link">← Dashboard</a>
+</div>
+<div class="page-title">ออเดอร์ & ตรวจสอบสลิป</div>
+
+<div class="filter-bar">
+  <input type="text" class="filter-input" id="searchEmail" placeholder="ค้นหาอีเมล...">
+  <select class="filter-select" id="statusFilter">
+    <option value="awaiting_review" selected>รอตรวจสอบสลิป</option>
+    <option value="">ทุกสถานะ</option>
+    <option value="pending">รอชำระเงิน</option>
+    <option value="delivered">ส่งแล้ว</option>
+    <option value="cancelled">ยกเลิก</option>
+  </select>
+</div>
+
+<div class="order-grid" id="orderGrid">
+  <div class="empty-state">กำลังโหลด...</div>
+</div>
+
+<div class="lightbox" id="lightbox"><img id="lightboxImg" src="" alt="สลิป"></div>
+
+<script type="module">
+import { auth, admin } from '../../js/api.js';
+
+const session = await auth.getSession();
+if (!session) { window.location.href = '/pages/login.html'; }
+
+const res = await fetch('/api/auth/profile', { headers: { Authorization: `Bearer ${session.access_token}` } });
+const { data: profile } = await res.json();
+if (profile?.role !== 'admin') { window.location.href = '/pages/shop.html'; }
+
+const STATUS_LABEL = {
+  pending:'รอชำระเงิน', awaiting_review:'รอตรวจสอบสลิป', delivered:'ส่งแล้ว', cancelled:'ยกเลิก'
+};
+
+let currentStatus = 'awaiting_review';
+let currentSearch = '';
+let debounce = null;
+
+async function loadOrders() {
+  document.getElementById('orderGrid').innerHTML = `<div class="empty-state">กำลังโหลด...</div>`;
+  try {
+    const { data } = await admin.orders({ status: currentStatus, search: currentSearch });
+    if (!data.length) {
+      document.getElementById('orderGrid').innerHTML = `<div class="empty-state">ไม่พบออเดอร์</div>`;
+      return;
+    }
+    document.getElementById('orderGrid').innerHTML = data.map(o => `
+      <div class="order-card ${o.status}">
+        <div class="order-top">
+          <span class="order-id">#${o.id.slice(0,8)}</span>
+          <span class="status-pill ${o.status}">${STATUS_LABEL[o.status]||o.status}</span>
+        </div>
+        <div class="order-email">${o.user_email}</div>
+        <div class="order-product">${o.product_label}</div>
+        <div class="order-amount">฿${Number(o.amount).toLocaleString()}</div>
+        <button class="view-btn" data-id="${o.id}">ดูรายละเอียด</button>
+      </div>
+    `).join('');
+    document.querySelectorAll('.view-btn').forEach(btn =>
+      btn.addEventListener('click', () => openModal(btn.dataset.id, data))
+    );
+  } catch {
+    document.getElementById('orderGrid').innerHTML = `<div class="empty-state">โหลดไม่สำเร็จ</div>`;
+  }
+}
+
+document.getElementById('searchEmail').addEventListener('input', (e) => {
+  currentSearch = e.target.value.trim();
+  clearTimeout(debounce);
+  debounce = setTimeout(loadOrders, 350);
+});
+document.getElementById('statusFilter').addEventListener('change', (e) => {
+  currentStatus = e.target.value;
+  loadOrders();
+});
+
+async function openModal(orderId, allOrders) {
+  const order = allOrders.find(o => o.id === orderId);
+  if (!order) return;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay show';
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+
+  const slipHtml = order.slip_path
+    ? `<div id="slipPlaceholder" style="text-align:center;padding:20px;color:rgba(26,58,82,0.4);font-size:13px;">กำลังโหลดสลิป...</div>`
+    : `<div style="text-align:center;padding:20px;color:rgba(26,58,82,0.4);font-size:13px;">ยังไม่มีสลิป</div>`;
+
+  const actionHtml = order.status === 'awaiting_review' ? `
+    <div class="action-row">
+      <button class="modal-btn approve" id="approveBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> ยืนยัน + ส่งไอดี</button>
+      <button class="modal-btn reject-btn" id="rejectBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> ปฏิเสธ</button>
+    </div>
+  ` : '';
+
+  overlay.innerHTML = `
+    <div class="modal-box">
+      <div class="modal-title">ออเดอร์ #${orderId.slice(0,8)}</div>
+      ${slipHtml}
+      <div class="detail-row"><span class="label">อีเมลลูกค้า</span><span class="value">${order.user_email}</span></div>
+      <div class="detail-row"><span class="label">สินค้า</span><span class="value">${order.product_label}</span></div>
+      <div class="detail-row"><span class="label">ยอดเงิน</span><span class="value">฿${Number(order.amount).toLocaleString()}</span></div>
+      <div class="detail-row"><span class="label">สถานะ</span><span class="value">${STATUS_LABEL[order.status]||order.status}</span></div>
+      ${actionHtml}
+      <div class="form-alert" id="modalAlert"></div>
+      <button class="modal-btn close-btn" id="closeModalBtn" style="margin-top:10px;width:100%;">ปิด</button>
+    </div>
+  `;
+
+  overlay.querySelector('#closeModalBtn').addEventListener('click', () => overlay.remove());
+
+  // โหลดสลิป
+  if (order.slip_path) {
+    admin.slipUrl(orderId).then(({ url }) => {
+      const ph = overlay.querySelector('#slipPlaceholder');
+      if (!ph) return;
+      ph.outerHTML = `<img class="slip-img" src="${url}" id="slipImg" alt="สลิป">`;
+      overlay.querySelector('#slipImg')?.addEventListener('click', () => {
+        document.getElementById('lightboxImg').src = url;
+        document.getElementById('lightbox').classList.add('show');
+      });
+    }).catch(() => {
+      const ph = overlay.querySelector('#slipPlaceholder');
+      if (ph) ph.textContent = 'โหลดสลิปไม่สำเร็จ';
+    });
+  }
+
+  // approve — เรียก deliver ทันที (ระบบดึงไอดีจากคลังอัตโนมัติ ไม่ต้องพิมพ์เอง)
+  overlay.querySelector('#approveBtn')?.addEventListener('click', async (e) => {
+    const alertEl = overlay.querySelector('#modalAlert');
+    const btn = e.target;
+    btn.disabled = true; btn.textContent = 'กำลังส่งไอดี...';
+    try {
+      const { data } = await admin.deliver(orderId);
+      alertEl.innerHTML = `ส่งไอดีสำเร็จ<br><span style="font-family:'Space Mono',monospace;font-size:11.5px;">${data.gmail} / ${data.password}</span>`;
+      alertEl.className = 'form-alert show success';
+      overlay.querySelector('.action-row').style.display = 'none';
+      setTimeout(() => { overlay.remove(); loadOrders(); }, 2000);
+    } catch (err) {
+      alertEl.textContent = err.message;
+      alertEl.className = 'form-alert show error';
+      btn.disabled = false; btn.textContent = 'ยืนยัน + ส่งไอดี';
+    }
+  });
+
+  // reject
+  overlay.querySelector('#rejectBtn')?.addEventListener('click', () => {
+    overlay.querySelector('#rejectBtn').insertAdjacentHTML('afterend', `
+      <div class="reject-box" id="rejectBox">
+        <textarea id="rejectReason" placeholder="ระบุเหตุผล เช่น สลิปไม่ชัด, ยอดเงินไม่ตรง"></textarea>
+        <div class="action-row" style="margin-top:8px;">
+          <button class="modal-btn reject-btn" id="confirmRejectBtn">ยืนยันการปฏิเสธ</button>
+        </div>
+      </div>
+    `);
+    overlay.querySelector('#rejectBtn').remove();
+    overlay.querySelector('#approveBtn').remove();
+
+    overlay.querySelector('#confirmRejectBtn').addEventListener('click', async (e) => {
+      const reason = overlay.querySelector('#rejectReason').value.trim();
+      const alertEl = overlay.querySelector('#modalAlert');
+      if (!reason) { alertEl.textContent = 'กรุณาระบุเหตุผล'; alertEl.className = 'form-alert show error'; return; }
+      e.target.disabled = true; e.target.textContent = 'กำลังดำเนินการ...';
+      try {
+        await admin.reject(orderId, reason);
+        overlay.remove();
+        loadOrders();
+      } catch (err) {
+        alertEl.textContent = err.message;
+        alertEl.className = 'form-alert show error';
+        e.target.disabled = false; e.target.textContent = 'ยืนยันการปฏิเสธ';
+      }
+    });
+  });
+}
+
+document.getElementById('lightbox').addEventListener('click', () => {
+  document.getElementById('lightbox').classList.remove('show');
+});
+
+loadOrders();
+</script>
+</body>
+</html>
